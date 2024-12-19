@@ -88,9 +88,6 @@ type SWD interface {
 	Detector
 	Filter
 	Loader
-
-	// SetOptions 配置选项
-	SetOptions(options SWDOptions) error
 }
 
 // SWDOptions 定义引擎的配置选项
@@ -108,23 +105,4 @@ type SWDOptions struct {
 	EnableSimilarShape bool // 启用形近字检测（如：幾/几）
 	EnableVariantForm  bool // 启用异体字检测（如：门/門）
 	EnableZhPYMix      bool // 启用中文拼音混合检测（如：fa票）
-}
-
-// DefaultSWDOptions 提供默认的引擎选项
-func DefaultSWDOptions() SWDOptions {
-	return SWDOptions{
-		IgnoreCase:         false,
-		IgnoreWidth:        false,
-		IgnoreNumStyle:     false,
-		EnableNumCheck:     false,
-		EnableURLCheck:     false,
-		EnableEmailCheck:   false,
-		SkipWhitespace:     true,
-		MaxDistance:        5,
-		EnablePinyin:       false,
-		EnableHomophone:    false,
-		EnableSimilarShape: false,
-		EnableVariantForm:  false,
-		EnableZhPYMix:      false,
-	}
 }

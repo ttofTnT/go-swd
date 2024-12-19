@@ -19,53 +19,35 @@ type SWD struct {
 	detector core.Detector
 	filter   core.Filter
 	loader   core.Loader
-	options  core.SWDOptions
+	options  *core.SWDOptions
 }
 
-// Config SWD 的配置选项
-type Config struct {
-	Factory ComponentFactory
-	Options core.SWDOptions
-}
-
-// New 创建新的敏感词检测引擎
-func New(config Config) (*SWD, error) {
-	if config.Factory == nil {
+// New 创建一个敏感词检测引擎
+func New(factory ComponentFactory) (*SWD, error) {
+	if factory == nil {
 		return nil, ErrNoFactory
 	}
 
-	detector := config.Factory.CreateDetector()
+	detector := factory.CreateDetector()
 	if detector == nil {
 		return nil, ErrNoDetector
 	}
 
-	filter := config.Factory.CreateFilter(detector)
+	filter := factory.CreateFilter(detector)
 	if filter == nil {
 		return nil, ErrNoFilter
 	}
 
-	loader := config.Factory.CreateLoader()
+	loader := factory.CreateLoader()
 	if loader == nil {
 		return nil, ErrNoLoader
-	}
-
-	options := config.Options
-	if options == (core.SWDOptions{}) {
-		options = core.DefaultSWDOptions()
 	}
 
 	return &SWD{
 		detector: detector,
 		filter:   filter,
 		loader:   loader,
-		options:  options,
 	}, nil
-}
-
-// SetOptions 设置引擎选项
-func (swd *SWD) SetOptions(options core.SWDOptions) error {
-	swd.options = options
-	return nil
 }
 
 // LoadDefaultWords 加载默认词库
