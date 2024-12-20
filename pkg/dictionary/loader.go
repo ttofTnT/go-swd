@@ -107,6 +107,12 @@ func (l *Loader) addWordLocked(word string, cat category.Category) error {
 	if word = strings.TrimSpace(word); word == "" {
 		return fmt.Errorf("word cannot be empty")
 	}
+
+	// 如果词已存在且有效分类，且当前要设置的是 None 分类，则保留原有分类
+	if existingCat, exists := l.words[word]; exists && existingCat != category.None && cat == category.None {
+		return nil
+	}
+
 	l.words[word] = cat
 	return nil
 }

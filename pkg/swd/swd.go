@@ -2,6 +2,7 @@ package swd
 
 import (
 	"context"
+
 	"github.com/kirklin/go-swd/pkg/types/category"
 
 	"github.com/kirklin/go-swd/pkg/core"
@@ -28,7 +29,8 @@ func New(factory ComponentFactory) (*SWD, error) {
 		return nil, ErrNoFactory
 	}
 
-	detector := factory.CreateDetector(&core.SWDOptions{})
+	options := &core.SWDOptions{}
+	detector := factory.CreateDetector(options)
 	if detector == nil {
 		return nil, ErrNoDetector
 	}
@@ -47,6 +49,7 @@ func New(factory ComponentFactory) (*SWD, error) {
 		detector: detector,
 		filter:   filter,
 		loader:   loader,
+		options:  options,
 	}, nil
 }
 
