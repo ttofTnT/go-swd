@@ -1,6 +1,7 @@
 package swd
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/kirklin/go-swd/pkg/core"
@@ -33,5 +34,30 @@ func (f *DefaultFactory) CreateFilter(detector core.Detector) core.Filter {
 
 // CreateLoader 创建加载器实例
 func (f *DefaultFactory) CreateLoader() core.Loader {
-	return dictionary.NewLoader()
+	loader := dictionary.NewLoader()
+	return loader
+}
+
+// CreateComponents 创建并关联所有组件
+func (f *DefaultFactory) CreateComponents(options *core.SWDOptions) (core.Detector, core.Filter, core.Loader) {
+	// 创建加载器
+	loader := f.CreateLoader()
+
+	// 加载默认词库
+	if err := loader.LoadDefaultWords(context.Background()); err != nil {
+		panic(fmt.Sprintf("加载默认词库失败: %v", err))
+	}
+
+	// 创建检测器
+	d := f.CreateDetector(options)
+
+	// 注册检测器为加载器的观察者
+	if observer, ok := d.(core.Observer); ok {
+		loader.(*dictionary.Loader).AddObserver(observer)
+	}
+
+	// 创建过滤器
+	filter := f.CreateFilter(d)
+
+	return d, filter, loader
 }

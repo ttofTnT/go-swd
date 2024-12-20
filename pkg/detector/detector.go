@@ -3,12 +3,14 @@ package detector
 import (
 	"context"
 	"fmt"
+	"log"
+	"sync"
+
 	"github.com/kirklin/go-swd/pkg/algorithm"
 	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/detector/preprocessor"
 	"github.com/kirklin/go-swd/pkg/dictionary"
 	"github.com/kirklin/go-swd/pkg/types/category"
-	"sync"
 )
 
 // detector 实现敏感词检测器接口
@@ -40,11 +42,28 @@ func NewDetector(options core.SWDOptions) (core.Detector, error) {
 		return nil, fmt.Errorf("构建算法失败: %w", err)
 	}
 
-	return &detector{
+	d := &detector{
 		algo:       ahoCorasick,
 		preprocess: preprocessor.NewPreprocessor(options),
 		options:    options,
-	}, nil
+	}
+
+	// 注册为观察者
+	loader.AddObserver(d)
+
+	return d, nil
+}
+
+// OnWordsChanged 实现Observer接口,当词库变更时重建算法
+func (d *detector) OnWordsChanged(words map[string]category.Category) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// 重建算法
+	if err := d.algo.Build(words); err != nil {
+		// 这里只能记录错误,因为是回调方法
+		log.Printf("重建算法失败: %v", err)
+	}
 }
 
 // Detect 检查文本是否包含任何敏感词

@@ -13,6 +13,7 @@ type ComponentFactory interface {
 	CreateDetector(options *core.SWDOptions) core.Detector
 	CreateFilter(detector core.Detector) core.Filter
 	CreateLoader() core.Loader
+	CreateComponents(options *core.SWDOptions) (core.Detector, core.Filter, core.Loader)
 }
 
 // SWD 敏感词检测与过滤引擎的实现
@@ -30,17 +31,16 @@ func New(factory ComponentFactory) (*SWD, error) {
 	}
 
 	options := &core.SWDOptions{}
-	detector := factory.CreateDetector(options)
+
+	// 使用工厂的CreateComponents方法创建并关联组件
+	detector, filter, loader := factory.CreateComponents(options)
+
 	if detector == nil {
 		return nil, ErrNoDetector
 	}
-
-	filter := factory.CreateFilter(detector)
 	if filter == nil {
 		return nil, ErrNoFilter
 	}
-
-	loader := factory.CreateLoader()
 	if loader == nil {
 		return nil, ErrNoLoader
 	}

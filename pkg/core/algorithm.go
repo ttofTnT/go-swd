@@ -15,6 +15,8 @@ const (
 
 // Algorithm 敏感词匹配算法接口
 type Algorithm interface {
+	Observer
+
 	// Type 返回算法类型
 	Type() AlgorithmType
 

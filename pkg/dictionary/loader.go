@@ -9,19 +9,22 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
 
 // Loader 实现core.Loader接口
 type Loader struct {
-	words map[string]category.Category
-	mu    sync.RWMutex
+	words     map[string]category.Category
+	mu        sync.RWMutex
+	observers []core.Observer
 }
 
 // NewLoader 创建新的加载器实例
 func NewLoader() *Loader {
 	return &Loader{
-		words: make(map[string]category.Category),
+		words:     make(map[string]category.Category),
+		observers: make([]core.Observer, 0),
 	}
 }
 
@@ -115,11 +118,41 @@ func (l *Loader) LoadCustomWords(ctx context.Context, words map[string]category.
 	return nil
 }
 
+// AddObserver 添加观察者
+func (l *Loader) AddObserver(observer core.Observer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.observers = append(l.observers, observer)
+}
+
+// RemoveObserver 移除观察者
+func (l *Loader) RemoveObserver(observer core.Observer) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for i, obs := range l.observers {
+		if obs == observer {
+			l.observers = append(l.observers[:i], l.observers[i+1:]...)
+			break
+		}
+	}
+}
+
+// notifyObservers 通知所有观察者
+func (l *Loader) notifyObservers() {
+	for _, observer := range l.observers {
+		observer.OnWordsChanged(l.words)
+	}
+}
+
 // AddWord 添加单个敏感词
 func (l *Loader) AddWord(word string, cat category.Category) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.addWordLocked(word, cat)
+	err := l.addWordLocked(word, cat)
+	if err == nil {
+		l.notifyObservers()
+	}
+	return err
 }
 
 // addWordLocked 在已获得锁的情况下添加单个敏感词
@@ -147,6 +180,7 @@ func (l *Loader) AddWords(words map[string]category.Category) error {
 			return err
 		}
 	}
+	l.notifyObservers()
 	return nil
 }
 
@@ -155,6 +189,7 @@ func (l *Loader) RemoveWord(word string) error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	delete(l.words, word)
+	l.notifyObservers()
 	return nil
 }
 
@@ -166,6 +201,7 @@ func (l *Loader) RemoveWords(words []string) error {
 	for _, word := range words {
 		delete(l.words, word)
 	}
+	l.notifyObservers()
 	return nil
 }
 
@@ -175,6 +211,7 @@ func (l *Loader) Clear() error {
 	defer l.mu.Unlock()
 
 	l.words = make(map[string]category.Category)
+	l.notifyObservers()
 	return nil
 }
 

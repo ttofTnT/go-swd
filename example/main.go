@@ -28,7 +28,7 @@ func main() {
 	}
 
 	// 3. 基本检测
-	text := "这是一段包含色情词的文本"
+	text := "这是一段包含色情词的文本,自定义敏感词1"
 	fmt.Println("是否包含敏感词:", detector.Detect(text))
 
 	// 4. 检测指定分类
@@ -42,12 +42,13 @@ func main() {
 
 	// 6. 获取所有匹配
 	words := detector.MatchAll(text)
-	for _, word := range words {
-		fmt.Printf("敏感词: %s (分类: %s, 位置: %d-%d)\n",
-			word.Word, word.Category, word.StartPos, word.EndPos)
+	for i, word := range words {
+		fmt.Printf("敏感词%d: %s (分类: %s, 位置: %d-%d)\n",
+			i+1, word.Word, word.Category, word.StartPos, word.EndPos)
 	}
 
 	// 7. 敏感词过滤
+	fmt.Println("过滤前的文本:", text)
 	filtered := detector.ReplaceWithAsterisk(text) // 使用 * 替换
 	fmt.Println("过滤后的文本:", filtered)
 

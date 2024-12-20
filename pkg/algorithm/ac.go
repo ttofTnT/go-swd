@@ -1,6 +1,8 @@
 package algorithm
 
 import (
+	"log"
+
 	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
@@ -214,4 +216,12 @@ func (ac *AhoCorasick) Replace(text string, replacement rune) string {
 // Detect 检查文本是否包含敏感词
 func (ac *AhoCorasick) Detect(text string) bool {
 	return ac.Match(text) != nil
+}
+
+// OnWordsChanged 实现 Observer 接口,当词库变更时重建算法
+func (ac *AhoCorasick) OnWordsChanged(words map[string]category.Category) {
+	if err := ac.Build(words); err != nil {
+		// 这里只能记录错误,因为是回调方法
+		log.Printf("重建算法失败: %v", err)
+	}
 }

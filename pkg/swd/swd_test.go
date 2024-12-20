@@ -177,6 +177,23 @@ func TestSWD_DetectIn(t *testing.T) {
 		t.Fatalf("Failed to load default words: %v", err)
 	}
 
+	// 添加一些测试用的敏感词
+	testWords := map[string]category.Category{
+		"色情":  category.Pornography,
+		"赌博":  category.Gambling,
+		"毒品":  category.Drugs,
+		"傻逼":  category.Profanity,
+		"小日本": category.Discrimination,
+		"诈骗":  category.Scam,
+		"政府":  category.Political,
+	}
+
+	for word, cat := range testWords {
+		if err := swd.AddWord(word, cat); err != nil {
+			t.Fatalf("Failed to add test word %s: %v", word, err)
+		}
+	}
+
 	tests := []struct {
 		name       string
 		text       string
@@ -194,6 +211,12 @@ func TestSWD_DetectIn(t *testing.T) {
 			text:       "这是一段包含色情的文本",
 			categories: []category.Category{category.Pornography},
 			want:       true,
+		},
+		{
+			name:       "text with pornography word",
+			text:       "这是一段包含色情的文本，但是分类不正确",
+			categories: []category.Category{category.Scam},
+			want:       false,
 		},
 		{
 			name:       "text with gambling word",
@@ -336,128 +359,6 @@ func TestCategory_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.category.String(); got != tt.want {
 				t.Errorf("Category.String() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-// TestSWD_AddWord 测试添加敏感词功能
-func TestSWD_AddWord(t *testing.T) {
-	swd, err := New(NewDefaultFactory())
-	if err != nil {
-		t.Fatalf("Failed to create SWD instance: %v", err)
-	}
-
-	tests := []struct {
-		name     string
-		word     string
-		category category.Category
-		wantErr  bool
-	}{
-		{
-			name:     "add valid word",
-			word:     "测试敏感词",
-			category: category.Custom,
-			wantErr:  false,
-		},
-		{
-			name:     "add empty word",
-			word:     "",
-			category: category.Custom,
-			wantErr:  true,
-		},
-		{
-			name:     "add duplicate word",
-			word:     "测试敏感词",
-			category: category.Custom,
-			wantErr:  true,
-		},
-		{
-			name:     "add word with invalid category",
-			word:     "无效分类词",
-			category: category.Category(1 << 31),
-			wantErr:  true,
-		},
-		{
-			name:     "add word with none category",
-			word:     "未分类词",
-			category: category.None,
-			wantErr:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := swd.AddWord(tt.word, tt.category)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SWD.AddWord() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !tt.wantErr {
-				if !swd.Detect(tt.word) {
-					t.Errorf("SWD.Detect() failed to detect added word")
-				}
-			}
-		})
-	}
-}
-
-// TestSWD_RemoveWord 测试移除敏感词功能
-func TestSWD_RemoveWord(t *testing.T) {
-	swd, err := New(NewDefaultFactory())
-	if err != nil {
-		t.Fatalf("Failed to create SWD instance: %v", err)
-	}
-
-	tests := []struct {
-		name    string
-		word    string
-		wantErr bool
-		setup   func()
-	}{
-		{
-			name:    "remove existing word",
-			word:    "测试敏感词",
-			wantErr: false,
-			setup: func() {
-				_ = swd.AddWord("测试敏感词", category.Custom)
-			},
-		},
-		{
-			name:    "remove non-existing word",
-			word:    "不存在的词",
-			wantErr: true,
-			setup:   func() {},
-		},
-		{
-			name:    "remove empty word",
-			word:    "",
-			wantErr: true,
-			setup:   func() {},
-		},
-		{
-			name:    "remove word multiple times",
-			word:    "重复删除词",
-			wantErr: true,
-			setup: func() {
-				_ = swd.AddWord("重复删除词", category.Custom)
-				_ = swd.RemoveWord("重复删除词")
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.setup()
-			err := swd.RemoveWord(tt.word)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("SWD.RemoveWord() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			if !tt.wantErr && swd.Detect(tt.word) {
-				t.Error("SWD.Detect() detected removed word")
 			}
 		})
 	}

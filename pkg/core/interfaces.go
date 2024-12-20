@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
 
@@ -11,6 +12,12 @@ type SensitiveWord struct {
 	StartPos int
 	EndPos   int
 	Category category.Category
+}
+
+// Observer 状态变更观察者接口
+type Observer interface {
+	// OnWordsChanged 词库变更时的回调
+	OnWordsChanged(words map[string]category.Category)
 }
 
 // Detector 敏感词检测器
@@ -81,6 +88,21 @@ type Loader interface {
 
 	// LoadCustomWords 加载自定义词库
 	LoadCustomWords(ctx context.Context, words map[string]category.Category) error
+
+	// GetWords 获取所有已加载的敏感词
+	GetWords() map[string]category.Category
+}
+
+// StateManager 状态管理接口
+type StateManager interface {
+	// RegisterObserver 注册状态观察者
+	RegisterObserver(observer Observer)
+
+	// RemoveObserver 移除状态观察者
+	RemoveObserver(observer Observer)
+
+	// NotifyObservers 通知所有观察者
+	NotifyObservers()
 }
 
 // SWD 主接口
@@ -88,6 +110,7 @@ type SWD interface {
 	Detector
 	Filter
 	Loader
+	StateManager
 }
 
 // SWDOptions 定义引擎的配置选项

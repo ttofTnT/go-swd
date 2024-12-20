@@ -1,6 +1,8 @@
 package algorithm
 
 import (
+	"log"
+
 	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
@@ -123,4 +125,12 @@ func (t *Trie) Replace(text string, replacement rune) string {
 // Detect 检查文本是否包含敏感词
 func (t *Trie) Detect(text string) bool {
 	return t.Match(text) != nil
+}
+
+// OnWordsChanged 实现 Observer 接口,当词库变更时重建算法
+func (t *Trie) OnWordsChanged(words map[string]category.Category) {
+	if err := t.Build(words); err != nil {
+		// 这里只能记录错误,因为是回调方法
+		log.Printf("重建算法失败: %v", err)
+	}
 }
