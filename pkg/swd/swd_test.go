@@ -209,13 +209,13 @@ func TestSWD_DetectIn(t *testing.T) {
 		},
 		{
 			name:       "text with profanity word",
-			text:       "这是一段包含脏话的文本",
+			text:       "这是一段包含脏话：傻逼的文本",
 			categories: []category.Category{category.Profanity},
 			want:       true,
 		},
 		{
 			name:       "text with discrimination word",
-			text:       "这是一段包含歧视的文本",
+			text:       "这是一段包含歧视：小日本的文本",
 			categories: []category.Category{category.Discrimination},
 			want:       true,
 		},

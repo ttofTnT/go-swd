@@ -34,6 +34,21 @@ var pornographyWords string
 //go:embed default/violence.txt
 var violenceWords string
 
+//go:embed default/gambling.txt
+var gamblingWords string
+
+//go:embed default/drugs.txt
+var drugsWords string
+
+//go:embed default/profanity.txt
+var profanityWords string
+
+//go:embed default/discrimination.txt
+var discriminationWords string
+
+//go:embed default/scam.txt
+var scamWords string
+
 //go:embed default/all.txt
 var allWords string
 
@@ -47,9 +62,14 @@ func (l *Loader) LoadDefaultWords(ctx context.Context) error {
 		content string
 		cat     category.Category
 	}{
-		"political.txt":   {content: politicalWords, cat: category.Political},
-		"pornography.txt": {content: pornographyWords, cat: category.Pornography},
-		"violence.txt":    {content: violenceWords, cat: category.Violence},
+		"political.txt":      {content: politicalWords, cat: category.Political},
+		"pornography.txt":    {content: pornographyWords, cat: category.Pornography},
+		"violence.txt":       {content: violenceWords, cat: category.Violence},
+		"gambling.txt":       {content: gamblingWords, cat: category.Gambling},
+		"drugs.txt":          {content: drugsWords, cat: category.Drugs},
+		"profanity.txt":      {content: profanityWords, cat: category.Profanity},
+		"discrimination.txt": {content: discriminationWords, cat: category.Discrimination},
+		"scam.txt":           {content: scamWords, cat: category.Scam},
 	}
 
 	for filename, data := range categories {
