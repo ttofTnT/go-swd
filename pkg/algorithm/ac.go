@@ -2,47 +2,58 @@ package algorithm
 
 import (
 	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types"
+	"github.com/kirklin/go-swd/pkg/types/category"
 )
 
-// ACNode AC自动机节点
-// AC Automaton Node
-type ACNode struct {
-	children map[rune]*ACNode // 子节点映射 / Child nodes mapping
-	failLink *ACNode          // 失败指针 / Failure link
-	isEnd    bool             // 是否是单词结尾 / Whether it's the end of a word
-	word     string           // 如果是结尾节点，存储完整词 / Store complete word if it's an end node
-	category types.Category   // 敏感词分类 / Sensitive word category
-	parent   *ACNode          // 父节点 (用于重建单词) / Parent node (for word reconstruction)
-	depth    int              // 在字典树中的深度 / Depth in the trie
+// AhoCorasickNode Aho-Corasick算法节点
+type AhoCorasickNode struct {
+	children map[rune]*AhoCorasickNode // 子节点映射
+	failLink *AhoCorasickNode          // 失败指针
+	isEnd    bool                      // 是否是单词结尾
+	word     string                    // 如果是结尾节点，存储完整词
+	category category.Category         // 敏感词分类
+	parent   *AhoCorasickNode          // 父节点 (用于重建单词)
+	depth    int                       // 在字典树中的深度
 }
 
-// newACNode 创建新的AC自动机节点
-// Create a new AC automaton node
-func newACNode() *ACNode {
-	return &ACNode{
-		children: make(map[rune]*ACNode),
+// newAhoCorasickNode 创建新的Aho-Corasick算法节点
+func newAhoCorasickNode() *AhoCorasickNode {
+	return &AhoCorasickNode{
+		children: make(map[rune]*AhoCorasickNode),
 	}
 }
 
-// ACAutomaton AC自动机
-// AC Automaton
-type ACAutomaton struct {
-	root  *ACNode
-	built bool // 是否已构建失败指针 / Whether failure links have been built
+// AhoCorasick Aho-Corasick算法实现
+type AhoCorasick struct {
+	root  *AhoCorasickNode
+	built bool // 是否已构建失败指针
 }
 
-// NewACAutomaton 创建新的AC自动机
-// Create a new AC automaton
-func NewACAutomaton() *ACAutomaton {
-	return &ACAutomaton{
-		root: newACNode(),
+// NewAhoCorasick 创建新的Aho-Corasick算法实例
+func NewAhoCorasick() *AhoCorasick {
+	return &AhoCorasick{
+		root: newAhoCorasickNode(),
 	}
 }
 
-// Insert 向自动机中添加一个词
-// Add a word to the automaton
-func (ac *ACAutomaton) Insert(word string, category types.Category) {
+// Type 返回算法类型
+func (ac *AhoCorasick) Type() core.AlgorithmType {
+	return core.AlgorithmAhoCorasick
+}
+
+// Build 构建Aho-Corasick算法词库
+func (ac *AhoCorasick) Build(words map[string]category.Category) error {
+	ac.root = newAhoCorasickNode()
+	for word, category := range words {
+		ac.insert(word, category)
+	}
+
+	ac.buildFailureLinks()
+	return nil
+}
+
+// insert 向自动机中添加一个词
+func (ac *AhoCorasick) insert(word string, category category.Category) {
 	if word == "" {
 		return
 	}
@@ -50,7 +61,7 @@ func (ac *ACAutomaton) Insert(word string, category types.Category) {
 	current := ac.root
 	for i, char := range word {
 		if _, exists := current.children[char]; !exists {
-			current.children[char] = newACNode()
+			current.children[char] = newAhoCorasickNode()
 			current.children[char].parent = current
 			current.children[char].depth = i + 1
 		}
@@ -60,26 +71,25 @@ func (ac *ACAutomaton) Insert(word string, category types.Category) {
 	current.isEnd = true
 	current.word = word
 	current.category = category
-	ac.built = false // 需要重新构建失败指针 / Need to rebuild failure links
+	ac.built = false // 需要重新构建失败指针
 }
 
 // buildFailureLinks 构建失败指针
-// Build failure links
-func (ac *ACAutomaton) buildFailureLinks() {
+func (ac *AhoCorasick) buildFailureLinks() {
 	if ac.built {
 		return
 	}
 
-	// 使用BFS构建失败指针 / Use BFS to build failure links
-	queue := make([]*ACNode, 0)
+	// 使用BFS构建失败指针
+	queue := make([]*AhoCorasickNode, 0)
 
-	// 先处理根节点的子节点 / Handle root's children first
+	// 先处理根节点的子节点
 	for _, child := range ac.root.children {
 		child.failLink = ac.root
 		queue = append(queue, child)
 	}
 
-	// 处理剩余节点 / Process remaining nodes
+	// 处理剩余节点
 	for len(queue) > 0 {
 		current := queue[0]
 		queue = queue[1:]
@@ -87,7 +97,7 @@ func (ac *ACAutomaton) buildFailureLinks() {
 		for char, child := range current.children {
 			queue = append(queue, child)
 
-			// 寻找失败指针 / Find failure link
+			// 寻找失败指针
 			failNode := current.failLink
 			for failNode != nil {
 				if next, exists := failNode.children[char]; exists {
@@ -105,17 +115,17 @@ func (ac *ACAutomaton) buildFailureLinks() {
 	ac.built = true
 }
 
-// MatchFirst 查找文本中的第一个匹配
-// Find the first match in the text
-func (ac *ACAutomaton) MatchFirst(text string) *core.SensitiveWord {
+// Match 查找文本中的第一个匹配
+func (ac *AhoCorasick) Match(text string) *core.SensitiveWord {
 	if !ac.built {
 		ac.buildFailureLinks()
 	}
 
 	current := ac.root
+	runes := []rune(text)
 
-	for pos, char := range text {
-		// 查找下一个状态 / Find next state
+	for pos, char := range runes {
+		// 查找下一个状态
 		for current != ac.root && current.children[char] == nil {
 			current = current.failLink
 		}
@@ -126,12 +136,14 @@ func (ac *ACAutomaton) MatchFirst(text string) *core.SensitiveWord {
 			continue
 		}
 
-		// 检查当前节点的匹配 / Check matches at current node
+		// 检查当前节点的匹配
 		for node := current; node != ac.root; node = node.failLink {
 			if node.isEnd {
+				wordRunes := []rune(node.word)
+				startPos := pos - len(wordRunes) + 1
 				return &core.SensitiveWord{
 					Word:     node.word,
-					StartPos: pos - node.depth + 1,
+					StartPos: startPos,
 					EndPos:   pos + 1,
 					Category: node.category,
 				}
@@ -142,18 +154,18 @@ func (ac *ACAutomaton) MatchFirst(text string) *core.SensitiveWord {
 	return nil
 }
 
-// MatchAll 查找文本中的所有匹配
-// Find all matches in the text
-func (ac *ACAutomaton) MatchAll(text string) []core.SensitiveWord {
+// MatchAll 返回文本中所有敏感词
+func (ac *AhoCorasick) MatchAll(text string) []core.SensitiveWord {
 	if !ac.built {
 		ac.buildFailureLinks()
 	}
 
 	var matches []core.SensitiveWord
 	current := ac.root
+	runes := []rune(text)
 
-	for pos, char := range text {
-		// 查找下一个状态 / Find next state
+	for pos, char := range runes {
+		// 查找下一个状态
 		for current != ac.root && current.children[char] == nil {
 			current = current.failLink
 		}
@@ -164,12 +176,14 @@ func (ac *ACAutomaton) MatchAll(text string) []core.SensitiveWord {
 			continue
 		}
 
-		// 检查当前节点的所有匹配 / Check all matches at current node
+		// 检查当前节点的所有匹配
 		for node := current; node != ac.root; node = node.failLink {
 			if node.isEnd {
+				wordRunes := []rune(node.word)
+				startPos := pos - len(wordRunes) + 1
 				match := core.SensitiveWord{
 					Word:     node.word,
-					StartPos: pos - node.depth + 1,
+					StartPos: startPos,
 					EndPos:   pos + 1,
 					Category: node.category,
 				}
@@ -179,4 +193,25 @@ func (ac *ACAutomaton) MatchAll(text string) []core.SensitiveWord {
 	}
 
 	return matches
+}
+
+// Replace 替换敏感词
+func (ac *AhoCorasick) Replace(text string, replacement rune) string {
+	matches := ac.MatchAll(text)
+	if len(matches) == 0 {
+		return text
+	}
+
+	runes := []rune(text)
+	for _, match := range matches {
+		for i := match.StartPos; i < match.EndPos; i++ {
+			runes[i] = replacement
+		}
+	}
+	return string(runes)
+}
+
+// Detect 检查文本是否包含敏感词
+func (ac *AhoCorasick) Detect(text string) bool {
+	return ac.Match(text) != nil
 }

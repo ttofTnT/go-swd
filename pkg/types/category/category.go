@@ -1,4 +1,4 @@
-package types
+package category
 
 // Category 敏感词分类
 type Category uint32

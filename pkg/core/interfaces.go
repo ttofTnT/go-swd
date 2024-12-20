@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-	"github.com/kirklin/go-swd/pkg/types"
+	"github.com/kirklin/go-swd/pkg/types/category"
 )
 
 // SensitiveWord 敏感词匹配结果
@@ -10,7 +10,7 @@ type SensitiveWord struct {
 	Word     string
 	StartPos int
 	EndPos   int
-	Category types.Category
+	Category category.Category
 }
 
 // Detector 敏感词检测器
@@ -19,19 +19,19 @@ type Detector interface {
 	Detect(text string) bool
 
 	// DetectIn 检查文本是否包含指定分类的敏感词
-	DetectIn(text string, categories ...types.Category) bool
+	DetectIn(text string, categories ...category.Category) bool
 
 	// Match 返回文本中第一个敏感词
 	Match(text string) *SensitiveWord
 
 	// MatchIn 返回文本中第一个指定分类的敏感词
-	MatchIn(text string, categories ...types.Category) *SensitiveWord
+	MatchIn(text string, categories ...category.Category) *SensitiveWord
 
 	// MatchAll 返回文本中所有敏感词
 	MatchAll(text string) []SensitiveWord
 
 	// MatchAllIn 返回文本中所有指定分类的敏感词
-	MatchAllIn(text string, categories ...types.Category) []SensitiveWord
+	MatchAllIn(text string, categories ...category.Category) []SensitiveWord
 }
 
 // Filter 敏感词过滤器
@@ -40,28 +40,28 @@ type Filter interface {
 	Replace(text string, replacement rune) string
 
 	// ReplaceIn 使用指定的替换字符替换指定分类的敏感词
-	ReplaceIn(text string, replacement rune, categories ...types.Category) string
+	ReplaceIn(text string, replacement rune, categories ...category.Category) string
 
 	// ReplaceWithAsterisk 使用 * 号替换敏感词
 	ReplaceWithAsterisk(text string) string
 
 	// ReplaceWithAsteriskIn 使用 * 号替换指定分类的敏感词
-	ReplaceWithAsteriskIn(text string, categories ...types.Category) string
+	ReplaceWithAsteriskIn(text string, categories ...category.Category) string
 
 	// ReplaceWithStrategy 使用自定义替换策略替换敏感词
 	ReplaceWithStrategy(text string, strategy func(word SensitiveWord) string) string
 
 	// ReplaceWithStrategyIn 使用自定义替换策略替换指定分类的敏感词
-	ReplaceWithStrategyIn(text string, strategy func(word SensitiveWord) string, categories ...types.Category) string
+	ReplaceWithStrategyIn(text string, strategy func(word SensitiveWord) string, categories ...category.Category) string
 }
 
 // WordManager 敏感词管理接口
 type WordManager interface {
 	// AddWord 添加单个敏感词
-	AddWord(word string, category types.Category) error
+	AddWord(word string, category category.Category) error
 
 	// AddWords 批量添加敏感词
-	AddWords(words map[string]types.Category) error
+	AddWords(words map[string]category.Category) error
 
 	// RemoveWord 移除单个敏感词
 	RemoveWord(word string) error
@@ -80,7 +80,7 @@ type Loader interface {
 	LoadDefaultWords(ctx context.Context) error
 
 	// LoadCustomWords 加载自定义词库
-	LoadCustomWords(ctx context.Context, words map[string]types.Category) error
+	LoadCustomWords(ctx context.Context, words map[string]category.Category) error
 }
 
 // SWD 主接口

@@ -2,14 +2,14 @@ package swd
 
 import (
 	"context"
+	"github.com/kirklin/go-swd/pkg/types/category"
 
 	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types"
 )
 
 // ComponentFactory 定义了创建各种组件的工厂接口
 type ComponentFactory interface {
-	CreateDetector() core.Detector
+	CreateDetector(options *core.SWDOptions) core.Detector
 	CreateFilter(detector core.Detector) core.Filter
 	CreateLoader() core.Loader
 }
@@ -28,7 +28,7 @@ func New(factory ComponentFactory) (*SWD, error) {
 		return nil, ErrNoFactory
 	}
 
-	detector := factory.CreateDetector()
+	detector := factory.CreateDetector(&core.SWDOptions{})
 	if detector == nil {
 		return nil, ErrNoDetector
 	}
@@ -56,17 +56,17 @@ func (swd *SWD) LoadDefaultWords(ctx context.Context) error {
 }
 
 // LoadCustomWords 加载自定义词库
-func (swd *SWD) LoadCustomWords(ctx context.Context, words map[string]types.Category) error {
+func (swd *SWD) LoadCustomWords(ctx context.Context, words map[string]category.Category) error {
 	return swd.loader.LoadCustomWords(ctx, words)
 }
 
 // AddWord 添加单个敏感词
-func (swd *SWD) AddWord(word string, category types.Category) error {
+func (swd *SWD) AddWord(word string, category category.Category) error {
 	return swd.loader.AddWord(word, category)
 }
 
 // AddWords 批量添加敏感词
-func (swd *SWD) AddWords(words map[string]types.Category) error {
+func (swd *SWD) AddWords(words map[string]category.Category) error {
 	return swd.loader.AddWords(words)
 }
 
@@ -91,7 +91,7 @@ func (swd *SWD) Detect(text string) bool {
 }
 
 // DetectIn 检查文本是否包含指定分类的敏感词
-func (swd *SWD) DetectIn(text string, categories ...types.Category) bool {
+func (swd *SWD) DetectIn(text string, categories ...category.Category) bool {
 	return swd.detector.DetectIn(text, categories...)
 }
 
@@ -101,7 +101,7 @@ func (swd *SWD) Match(text string) *core.SensitiveWord {
 }
 
 // MatchIn 返回文本中第一个指定分类的敏感词
-func (swd *SWD) MatchIn(text string, categories ...types.Category) *core.SensitiveWord {
+func (swd *SWD) MatchIn(text string, categories ...category.Category) *core.SensitiveWord {
 	return swd.detector.MatchIn(text, categories...)
 }
 
@@ -111,7 +111,7 @@ func (swd *SWD) MatchAll(text string) []core.SensitiveWord {
 }
 
 // MatchAllIn 返回文本中所有指定分类的敏感词
-func (swd *SWD) MatchAllIn(text string, categories ...types.Category) []core.SensitiveWord {
+func (swd *SWD) MatchAllIn(text string, categories ...category.Category) []core.SensitiveWord {
 	return swd.detector.MatchAllIn(text, categories...)
 }
 
@@ -121,7 +121,7 @@ func (swd *SWD) Replace(text string, replacement rune) string {
 }
 
 // ReplaceIn 使用指定的替换字符替换指定分类的敏感词
-func (swd *SWD) ReplaceIn(text string, replacement rune, categories ...types.Category) string {
+func (swd *SWD) ReplaceIn(text string, replacement rune, categories ...category.Category) string {
 	return swd.filter.ReplaceIn(text, replacement, categories...)
 }
 
@@ -131,7 +131,7 @@ func (swd *SWD) ReplaceWithAsterisk(text string) string {
 }
 
 // ReplaceWithAsteriskIn 使用星号替换指定分类的敏感词
-func (swd *SWD) ReplaceWithAsteriskIn(text string, categories ...types.Category) string {
+func (swd *SWD) ReplaceWithAsteriskIn(text string, categories ...category.Category) string {
 	return swd.filter.ReplaceWithAsteriskIn(text, categories...)
 }
 
@@ -141,6 +141,6 @@ func (swd *SWD) ReplaceWithStrategy(text string, strategy func(word core.Sensiti
 }
 
 // ReplaceWithStrategyIn 使用自定义策略替换指定分类的敏感词
-func (swd *SWD) ReplaceWithStrategyIn(text string, strategy func(word core.SensitiveWord) string, categories ...types.Category) string {
+func (swd *SWD) ReplaceWithStrategyIn(text string, strategy func(word core.SensitiveWord) string, categories ...category.Category) string {
 	return swd.filter.ReplaceWithStrategyIn(text, strategy, categories...)
 }
