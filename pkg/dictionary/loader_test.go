@@ -200,3 +200,117 @@ func BenchmarkAddWord(b *testing.B) {
 		_ = loader.AddWord(word, category.Political)
 	}
 }
+
+// TestLoadDefaultWordsWithCancel 测试加载默认词库时的上下文取消
+func TestLoadDefaultWordsWithCancel(t *testing.T) {
+	loader := NewLoader()
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // 立即取消
+
+	err := loader.LoadDefaultWords(ctx)
+	assert.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+}
+
+// TestLoadCustomWordsWithCancel 测试加载自定义词库时的上下文取消
+func TestLoadCustomWordsWithCancel(t *testing.T) {
+	loader := NewLoader()
+	ctx, cancel := context.WithCancel(context.Background())
+
+	customWords := make(map[string]category.Category)
+	for i := 0; i < 2000; i++ { // 创建足够多的词以确保触发批处理
+		customWords[fmt.Sprintf("测试词%d", i)] = category.Political
+	}
+
+	cancel() // 立即取消
+	err := loader.LoadCustomWords(ctx, customWords)
+	assert.Error(t, err)
+	assert.Equal(t, context.Canceled, err)
+}
+
+// TestAddWords 测试批量添加敏感词
+func TestAddWords(t *testing.T) {
+	loader := NewLoader()
+
+	// 测试正常添加
+	words := map[string]category.Category{
+		"测试词1": category.Political,
+		"测试词2": category.Pornography,
+		"测试词3": category.Violence,
+	}
+	err := loader.AddWords(words)
+	assert.NoError(t, err)
+
+	loadedWords := loader.GetWords()
+	assert.Equal(t, len(words), len(loadedWords))
+	for word, cat := range words {
+		assert.Equal(t, cat, loadedWords[word])
+	}
+
+	// 测试添加空白词
+	invalidWords := map[string]category.Category{
+		"测试词4": category.Political,
+		"   ":  category.Political,
+	}
+	err = loader.AddWords(invalidWords)
+	assert.Error(t, err)
+}
+
+// TestRemoveWords 测试批量删除敏感词
+func TestRemoveWords(t *testing.T) {
+	loader := NewLoader()
+
+	// 添加测试词
+	_ = loader.AddWord("测试词1", category.Political)
+	_ = loader.AddWord("测试词2", category.Political)
+	_ = loader.AddWord("测试词3", category.Political)
+
+	// 测试删除存在的词
+	err := loader.RemoveWords([]string{"测试词1", "测试词2"})
+	assert.NoError(t, err)
+
+	words := loader.GetWords()
+	assert.Len(t, words, 1)
+	_, exists := words["测试词3"]
+	assert.True(t, exists)
+
+	// 测试删除不存在的词
+	err = loader.RemoveWords([]string{"不存在的词"})
+	assert.NoError(t, err)
+}
+
+// TestNoneCategoryHandling 测试None分类的特殊处理
+func TestNoneCategoryHandling(t *testing.T) {
+	loader := NewLoader()
+
+	// 先添加一个有效分类的词
+	_ = loader.AddWord("测试词", category.Political)
+
+	// 尝试用None分类覆盖已有词
+	err := loader.AddWord("测试词", category.None)
+	assert.NoError(t, err)
+
+	// 验证原有分类被保留
+	words := loader.GetWords()
+	assert.Equal(t, category.Political, words["测试词"])
+}
+
+// TestLoadFromReaderError 测试从Reader加载时的错误处理
+func TestLoadFromReaderError(t *testing.T) {
+	loader := NewLoader()
+
+	// 创建一个会产生错误的Reader
+	errReader := &ErrorReader{err: fmt.Errorf("read error")}
+
+	err := loader.loadFromReader(context.Background(), errReader, category.Political)
+	assert.Error(t, err)
+}
+
+// ErrorReader 用于测试Reader错误的辅助类型
+type ErrorReader struct {
+	err error
+}
+
+func (r *ErrorReader) Read(p []byte) (n int, err error) {
+	return 0, r.err
+}
