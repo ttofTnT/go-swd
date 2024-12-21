@@ -15,8 +15,9 @@ import (
 func TestNewLoader(t *testing.T) {
 	loader := NewLoader()
 	assert.NotNil(t, loader)
-	assert.NotNil(t, loader.words)
-	assert.Empty(t, loader.words)
+	words := loader.GetWords()
+	assert.NotNil(t, words)
+	assert.Equal(t, 0, len(words))
 }
 
 // TestLoadDefaultWords 测试加载默认词库
@@ -100,7 +101,7 @@ func TestRemoveWord(t *testing.T) {
 	// 测试删除存在的词
 	err := loader.RemoveWord("测试词")
 	assert.NoError(t, err)
-	assert.Empty(t, loader.GetWords())
+	assert.Equal(t, 0, len(loader.GetWords()))
 
 	// 测试删除不存在的词
 	err = loader.RemoveWord("不存在的词")
@@ -118,7 +119,7 @@ func TestClear(t *testing.T) {
 	// 测试清空
 	err := loader.Clear()
 	assert.NoError(t, err)
-	assert.Empty(t, loader.GetWords())
+	assert.Equal(t, 0, len(loader.GetWords()))
 }
 
 // TestConcurrentOperations 测试并发操作

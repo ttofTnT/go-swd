@@ -104,9 +104,5 @@ func (c Category) IsValid() bool {
 	}
 
 	// 检查是否是组合分类
-	if (c & All) == c {
-		return true
-	}
-
-	return false
+	return (c & All) == c
 }
