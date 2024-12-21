@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
@@ -15,17 +17,21 @@ import (
 
 // Loader 实现core.Loader接口
 type Loader struct {
-	words     map[string]category.Category
-	mu        sync.RWMutex
-	observers []core.Observer
+	words           sync.Map
+	observers       sync.Map
+	notifyBatchSize int
+	lastNotifyTime  atomic.Value // time.Time
+	notifyInterval  time.Duration
 }
 
 // NewLoader 创建新的加载器实例
 func NewLoader() *Loader {
-	return &Loader{
-		words:     make(map[string]category.Category),
-		observers: make([]core.Observer, 0),
+	l := &Loader{
+		notifyBatchSize: 100,
+		notifyInterval:  time.Millisecond * 100,
 	}
+	l.lastNotifyTime.Store(time.Now())
+	return l
 }
 
 //go:embed default/political.txt
@@ -57,9 +63,6 @@ var allWords string
 
 // LoadDefaultWords 加载默认词库
 func (l *Loader) LoadDefaultWords(ctx context.Context) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	// 加载所有分类词典
 	categories := map[string]struct {
 		content string
@@ -91,14 +94,12 @@ func (l *Loader) LoadDefaultWords(ctx context.Context) error {
 		return fmt.Errorf("failed to load all.txt: %w", err)
 	}
 
+	l.notifyObserversIfNeeded(true)
 	return nil
 }
 
 // LoadCustomWords 加载自定义词库
 func (l *Loader) LoadCustomWords(ctx context.Context, words map[string]category.Category) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	const batchSize = 1000
 	count := 0
 
@@ -110,108 +111,103 @@ func (l *Loader) LoadCustomWords(ctx context.Context, words map[string]category.
 			default:
 			}
 		}
-		if err := l.addWordLocked(word, cat); err != nil {
+		if err := l.addWordInternal(word, cat); err != nil {
 			return err
 		}
 		count++
 	}
+
+	l.notifyObserversIfNeeded(true)
 	return nil
 }
 
 // AddObserver 添加观察者
 func (l *Loader) AddObserver(observer core.Observer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.observers = append(l.observers, observer)
+	l.observers.Store(observer, struct{}{})
 }
 
 // RemoveObserver 移除观察者
 func (l *Loader) RemoveObserver(observer core.Observer) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	for i, obs := range l.observers {
-		if obs == observer {
-			l.observers = append(l.observers[:i], l.observers[i+1:]...)
-			break
-		}
-	}
+	l.observers.Delete(observer)
 }
 
-// notifyObservers 通知所有观察者
-func (l *Loader) notifyObservers() {
-	for _, observer := range l.observers {
-		observer.OnWordsChanged(l.words)
+// notifyObserversIfNeeded 根据条件通知观察者
+func (l *Loader) notifyObserversIfNeeded(force bool) {
+	if !force {
+		lastNotify := l.lastNotifyTime.Load().(time.Time)
+		if time.Since(lastNotify) < l.notifyInterval {
+			return
+		}
 	}
+
+	words := l.GetWords()
+	l.observers.Range(func(key, value interface{}) bool {
+		if observer, ok := key.(core.Observer); ok {
+			observer.OnWordsChanged(words)
+		}
+		return true
+	})
+
+	l.lastNotifyTime.Store(time.Now())
 }
 
 // AddWord 添加单个敏感词
 func (l *Loader) AddWord(word string, cat category.Category) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	err := l.addWordLocked(word, cat)
-	if err == nil {
-		l.notifyObservers()
+	if err := l.addWordInternal(word, cat); err != nil {
+		return err
 	}
-	return err
+	l.notifyObserversIfNeeded(false)
+	return nil
 }
 
-// addWordLocked 在已获得锁的情况下添加单个敏感词
-func (l *Loader) addWordLocked(word string, cat category.Category) error {
+// addWordInternal 内部添加词方法
+func (l *Loader) addWordInternal(word string, cat category.Category) error {
 	if word = strings.TrimSpace(word); word == "" {
 		return fmt.Errorf("word cannot be empty")
 	}
 
 	// 如果词已存在且有效分类，且当前要设置的是 None 分类，则保留原有分类
-	if existingCat, exists := l.words[word]; exists && existingCat != category.None && cat == category.None {
-		return nil
+	if val, exists := l.words.Load(word); exists {
+		if existingCat, ok := val.(category.Category); ok && existingCat != category.None && cat == category.None {
+			return nil
+		}
 	}
 
-	l.words[word] = cat
+	l.words.Store(word, cat)
 	return nil
 }
 
 // AddWords 批量添加敏感词
 func (l *Loader) AddWords(words map[string]category.Category) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	for word, cat := range words {
-		if err := l.addWordLocked(word, cat); err != nil {
+		if err := l.addWordInternal(word, cat); err != nil {
 			return err
 		}
 	}
-	l.notifyObservers()
+	l.notifyObserversIfNeeded(true)
 	return nil
 }
 
 // RemoveWord 移除单个敏感词
 func (l *Loader) RemoveWord(word string) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	delete(l.words, word)
-	l.notifyObservers()
+	l.words.Delete(word)
+	l.notifyObserversIfNeeded(false)
 	return nil
 }
 
 // RemoveWords 批量移除敏感词
 func (l *Loader) RemoveWords(words []string) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	for _, word := range words {
-		delete(l.words, word)
+		l.words.Delete(word)
 	}
-	l.notifyObservers()
+	l.notifyObserversIfNeeded(true)
 	return nil
 }
 
 // Clear 清空所有敏感词
 func (l *Loader) Clear() error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	l.words = make(map[string]category.Category)
-	l.notifyObservers()
+	l.words = sync.Map{}
+	l.notifyObserversIfNeeded(true)
 	return nil
 }
 
@@ -240,7 +236,7 @@ func (l *Loader) loadFromReader(ctx context.Context, reader io.Reader, cat categ
 		if word == "" || strings.HasPrefix(word, "#") {
 			continue
 		}
-		if err := l.addWordLocked(word, cat); err != nil {
+		if err := l.addWordInternal(word, cat); err != nil {
 			return err
 		}
 		count++
@@ -250,13 +246,14 @@ func (l *Loader) loadFromReader(ctx context.Context, reader io.Reader, cat categ
 
 // GetWords 获取所有已加载的敏感词
 func (l *Loader) GetWords() map[string]category.Category {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
-	// 创建一个副本以避免并发访问问题
-	words := make(map[string]category.Category, len(l.words))
-	for k, v := range l.words {
-		words[k] = v
-	}
+	words := make(map[string]category.Category)
+	l.words.Range(func(key, value interface{}) bool {
+		if k, ok := key.(string); ok {
+			if v, ok := value.(category.Category); ok {
+				words[k] = v
+			}
+		}
+		return true
+	})
 	return words
 }
