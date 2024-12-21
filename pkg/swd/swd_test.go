@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
 
@@ -261,6 +262,12 @@ func TestSWD_DetectIn(t *testing.T) {
 			want:       true,
 		},
 		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和政府的文本",
+			categories: []category.Category{category.Political},
+			want:       true,
+		},
+		{
 			name:       "text with invalid category",
 			text:       "这是一段正常的文本",
 			categories: []category.Category{category.Category(1 << 31)},
@@ -469,6 +476,654 @@ func TestSWD_Performance(t *testing.T) {
 			t.Logf("Performance test completed in %v", duration)
 			if duration > tt.maxTime {
 				t.Errorf("Performance test took too long: %v > %v", duration, tt.maxTime)
+			}
+		})
+	}
+}
+
+// TestSWD_LoadCustomWords 测试加载自定义词库
+func TestSWD_LoadCustomWords(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		words   map[string]category.Category
+		wantErr bool
+	}{
+		{
+			name:    "empty words",
+			words:   map[string]category.Category{},
+			wantErr: false,
+		},
+		{
+			name: "valid words",
+			words: map[string]category.Category{
+				"测试词1": category.Pornography,
+				"测试词2": category.Political,
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid category",
+			words: map[string]category.Category{
+				"测试词": category.Category(1 << 31),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := swd.LoadCustomWords(context.Background(), tt.words)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("LoadCustomWords() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestSWD_AddWords 测试批量添加敏感词
+func TestSWD_AddWords(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		words   map[string]category.Category
+		wantErr bool
+	}{
+		{
+			name:    "empty words",
+			words:   map[string]category.Category{},
+			wantErr: false,
+		},
+		{
+			name: "valid words",
+			words: map[string]category.Category{
+				"测试词1": category.Pornography,
+				"测试词2": category.Political,
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid category",
+			words: map[string]category.Category{
+				"测试词": category.Category(1 << 31),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := swd.AddWords(tt.words)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AddWords() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestSWD_RemoveWords 测试批量删除敏感词
+func TestSWD_RemoveWords(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	// 先添加一些测试词
+	testWords := map[string]category.Category{
+		"测试词1": category.Pornography,
+		"测试词2": category.Political,
+	}
+	if err := swd.AddWords(testWords); err != nil {
+		t.Fatalf("Failed to add test words: %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		words   []string
+		wantErr bool
+	}{
+		{
+			name:    "empty words",
+			words:   []string{},
+			wantErr: false,
+		},
+		{
+			name:    "existing words",
+			words:   []string{"测试词1", "测试词2"},
+			wantErr: false,
+		},
+		{
+			name:    "non-existing words",
+			words:   []string{"不存在的词"},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := swd.RemoveWords(tt.words)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RemoveWords() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// TestSWD_Match 测试匹配单个敏感词
+func TestSWD_Match(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		text     string
+		wantWord string
+		wantNil  bool
+	}{
+		{
+			name:    "empty text",
+			text:    "",
+			wantNil: true,
+		},
+		{
+			name:    "text without sensitive word",
+			text:    "这是一段正常的文本",
+			wantNil: true,
+		},
+		{
+			name:     "text with sensitive word",
+			text:     "这是一段包含色情的文本",
+			wantWord: "色情",
+			wantNil:  false,
+		},
+		{
+			name:     "text with multiple sensitive words",
+			text:     "这是一段包含色情和暴力的文本",
+			wantWord: "色情",
+			wantNil:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := swd.Match(tt.text)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("Match() = %v, want nil", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Error("Match() = nil, want non-nil")
+				return
+			}
+			if got.Word != tt.wantWord {
+				t.Errorf("Match().Word = %v, want %v", got.Word, tt.wantWord)
+			}
+		})
+	}
+}
+
+// TestSWD_MatchAll 测试匹配所有敏感词
+func TestSWD_MatchAll(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name      string
+		text      string
+		wantWords []string
+	}{
+		{
+			name:      "empty text",
+			text:      "",
+			wantWords: nil,
+		},
+		{
+			name:      "text without sensitive word",
+			text:      "这是一段正常的文本",
+			wantWords: nil,
+		},
+		{
+			name:      "text with single sensitive word",
+			text:      "这是一段包含色情的文本",
+			wantWords: []string{"色情"},
+		},
+		{
+			name:      "text with multiple sensitive words",
+			text:      "这是一段包含色情和暴力的文本",
+			wantWords: []string{"色情", "暴力"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := swd.MatchAll(tt.text)
+			if len(got) != len(tt.wantWords) {
+				t.Errorf("MatchAll() returned %d words, want %d", len(got), len(tt.wantWords))
+				return
+			}
+			for i, word := range tt.wantWords {
+				if got[i].Word != word {
+					t.Errorf("MatchAll()[%d].Word = %v, want %v", i, got[i].Word, word)
+				}
+			}
+		})
+	}
+}
+
+// TestSWD_ReplaceWithAsterisk 测试使用星号替换敏感词
+func TestSWD_ReplaceWithAsterisk(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "empty text",
+			text: "",
+			want: "",
+		},
+		{
+			name: "text without sensitive word",
+			text: "这是一段正常的文本",
+			want: "这是一段正常的文本",
+		},
+		{
+			name: "text with single sensitive word",
+			text: "这是一段包含色情的文本",
+			want: "这是一段包含**的文本",
+		},
+		{
+			name: "text with multiple sensitive words",
+			text: "这是一段包含色情和暴力的文本",
+			want: "这是一段包含**和**的文本",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := swd.ReplaceWithAsterisk(tt.text); got != tt.want {
+				t.Errorf("ReplaceWithAsterisk() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSWD_ReplaceWithStrategy 测试使用自定义策略替换敏感词
+func TestSWD_ReplaceWithStrategy(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	// 自定义替换策略：用 "[REMOVED]" 替换敏感词
+	strategy := func(word core.SensitiveWord) string {
+		return "[REMOVED]"
+	}
+
+	tests := []struct {
+		name string
+		text string
+		want string
+	}{
+		{
+			name: "empty text",
+			text: "",
+			want: "",
+		},
+		{
+			name: "text without sensitive word",
+			text: "这是一段正常的文本",
+			want: "这是一段正常的文本",
+		},
+		{
+			name: "text with single sensitive word",
+			text: "这是一段包含色情的文本",
+			want: "这是一段包含[REMOVED]的文本",
+		},
+		{
+			name: "text with multiple sensitive words",
+			text: "这是一段包含色情和暴力的文本",
+			want: "这是一段包含[REMOVED]和[REMOVED]的文本",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := swd.ReplaceWithStrategy(tt.text, strategy); got != tt.want {
+				t.Errorf("ReplaceWithStrategy() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSWD_MatchIn 测试在指定分类中匹配敏感词
+func TestSWD_MatchIn(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name       string
+		text       string
+		categories []category.Category
+		wantWord   string
+		wantNil    bool
+	}{
+		{
+			name:       "empty text",
+			text:       "",
+			categories: []category.Category{category.Pornography},
+			wantNil:    true,
+		},
+		{
+			name:       "text without sensitive word in category",
+			text:       "这是一段包含暴力的文本",
+			categories: []category.Category{category.Pornography},
+			wantNil:    true,
+		},
+		{
+			name:       "text with sensitive word in category",
+			text:       "这是一段包含色情的文本",
+			categories: []category.Category{category.Pornography},
+			wantWord:   "色情",
+			wantNil:    false,
+		},
+		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和暴力的文本",
+			categories: []category.Category{category.Pornography, category.Violence},
+			wantWord:   "色情",
+			wantNil:    false,
+		},
+		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和暴力的文本",
+			categories: []category.Category{category.Violence},
+			wantWord:   "暴力",
+			wantNil:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := swd.MatchIn(tt.text, tt.categories...)
+			if tt.wantNil {
+				if got != nil {
+					t.Errorf("MatchIn() = %v, want nil", got)
+				}
+				return
+			}
+			if got == nil {
+				t.Error("MatchIn() = nil, want non-nil")
+				return
+			}
+			if got.Word != tt.wantWord {
+				t.Errorf("MatchIn().Word = %v, want %v", got.Word, tt.wantWord)
+			}
+		})
+	}
+}
+
+// TestSWD_MatchAllIn 测试在指定分类中匹配所有敏感词
+func TestSWD_MatchAllIn(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name       string
+		text       string
+		categories []category.Category
+		wantWords  []string
+	}{
+		{
+			name:       "empty text",
+			text:       "",
+			categories: []category.Category{category.Pornography},
+			wantWords:  nil,
+		},
+		{
+			name:       "text without sensitive word in category",
+			text:       "这是一段包含暴力的文本",
+			categories: []category.Category{category.Pornography},
+			wantWords:  nil,
+		},
+		{
+			name:       "text with sensitive word in category",
+			text:       "这是一段包含色情的文本",
+			categories: []category.Category{category.Pornography},
+			wantWords:  []string{"色情"},
+		},
+		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和暴力的文本",
+			categories: []category.Category{category.Pornography, category.Violence},
+			wantWords:  []string{"色情", "暴力"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := swd.MatchAllIn(tt.text, tt.categories...)
+			if len(got) != len(tt.wantWords) {
+				t.Errorf("MatchAllIn() returned %d words, want %d", len(got), len(tt.wantWords))
+				return
+			}
+			for i, word := range tt.wantWords {
+				if got[i].Word != word {
+					t.Errorf("MatchAllIn()[%d].Word = %v, want %v", i, got[i].Word, word)
+				}
+			}
+		})
+	}
+}
+
+// TestSWD_ReplaceIn 测试在指定分类中替换敏感词
+func TestSWD_ReplaceIn(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name        string
+		text        string
+		replacement rune
+		categories  []category.Category
+		want        string
+	}{
+		{
+			name:        "empty text",
+			text:        "",
+			replacement: '*',
+			categories:  []category.Category{category.Pornography},
+			want:        "",
+		},
+		{
+			name:        "text without sensitive word in category",
+			text:        "这是一段包含暴力的文本",
+			replacement: '*',
+			categories:  []category.Category{category.Pornography},
+			want:        "这是一段包含暴力的文本",
+		},
+		{
+			name:        "text with sensitive word in category",
+			text:        "这是一段包含色情的文本",
+			replacement: '*',
+			categories:  []category.Category{category.Pornography},
+			want:        "这是一段包含**的文本",
+		},
+		{
+			name:        "text with multiple categories",
+			text:        "这是一段包含色情和暴力的文本",
+			replacement: '#',
+			categories:  []category.Category{category.Pornography, category.Violence},
+			want:        "这是一段包含##和##的文本",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := swd.ReplaceIn(tt.text, tt.replacement, tt.categories...); got != tt.want {
+				t.Errorf("ReplaceIn() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSWD_ReplaceWithAsteriskIn 测试在指定分类中使用星号替换敏感词
+func TestSWD_ReplaceWithAsteriskIn(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	tests := []struct {
+		name       string
+		text       string
+		categories []category.Category
+		want       string
+	}{
+		{
+			name:       "empty text",
+			text:       "",
+			categories: []category.Category{category.Pornography},
+			want:       "",
+		},
+		{
+			name:       "text without sensitive word in category",
+			text:       "这是一段包含暴力的文本",
+			categories: []category.Category{category.Pornography},
+			want:       "这是一段包含暴力的文本",
+		},
+		{
+			name:       "text with sensitive word in category",
+			text:       "这是一段包含色情的文本",
+			categories: []category.Category{category.Pornography},
+			want:       "这是一段包含**的文本",
+		},
+		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和暴力的文本",
+			categories: []category.Category{category.Pornography, category.Violence},
+			want:       "这是一段包含**和**的文本",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := swd.ReplaceWithAsteriskIn(tt.text, tt.categories...); got != tt.want {
+				t.Errorf("ReplaceWithAsteriskIn() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSWD_ReplaceWithStrategyIn 测试在指定分类中使用自定义策略替换敏感词
+func TestSWD_ReplaceWithStrategyIn(t *testing.T) {
+	swd, err := New(NewDefaultFactory())
+	if err != nil {
+		t.Fatalf("Failed to create SWD instance: %v", err)
+	}
+
+	if err := swd.LoadDefaultWords(context.Background()); err != nil {
+		t.Fatalf("Failed to load default words: %v", err)
+	}
+
+	// 自定义替换策略：用 "[REMOVED]" 替换敏感词
+	strategy := func(word core.SensitiveWord) string {
+		return "[REMOVED]"
+	}
+
+	tests := []struct {
+		name       string
+		text       string
+		categories []category.Category
+		want       string
+	}{
+		{
+			name:       "empty text",
+			text:       "",
+			categories: []category.Category{category.Pornography},
+			want:       "",
+		},
+		{
+			name:       "text without sensitive word in category",
+			text:       "这是一段包含暴力的文本",
+			categories: []category.Category{category.Pornography},
+			want:       "这是一段包含暴力的文本",
+		},
+		{
+			name:       "text with sensitive word in category",
+			text:       "这是一段包含色情的文本",
+			categories: []category.Category{category.Pornography},
+			want:       "这是一段包含[REMOVED]的文本",
+		},
+		{
+			name:       "text with multiple categories",
+			text:       "这是一段包含色情和暴力的文本",
+			categories: []category.Category{category.Pornography, category.Violence},
+			want:       "这是一段包含[REMOVED]和[REMOVED]的文本",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := swd.ReplaceWithStrategyIn(tt.text, strategy, tt.categories...); got != tt.want {
+				t.Errorf("ReplaceWithStrategyIn() = %v, want %v", got, tt.want)
 			}
 		})
 	}

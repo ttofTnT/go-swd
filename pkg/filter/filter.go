@@ -1,6 +1,8 @@
 package filter
 
 import (
+	"sort"
+
 	"github.com/kirklin/go-swd/pkg/core"
 	"github.com/kirklin/go-swd/pkg/types/category"
 )
@@ -36,14 +38,28 @@ func (f *filter) ReplaceIn(text string, replacement rune, categories ...category
 	if text == "" || len(categories) == 0 {
 		return text
 	}
+
+	// 获取所有匹配的敏感词
 	matches := f.detector.MatchAllIn(text, categories...)
-	return f.replaceWords(text, matches, func(word core.SensitiveWord) string {
-		chars := make([]rune, len([]rune(word.Word)))
-		for i := range chars {
-			chars[i] = replacement
-		}
-		return string(chars)
+	if len(matches) == 0 {
+		return text
+	}
+
+	// 按照位置排序，从后向前替换
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i].StartPos > matches[j].StartPos
 	})
+
+	// 转换为rune数组以便处理中文
+	runes := []rune(text)
+	for _, match := range matches {
+		// 替换敏感词
+		for i := match.StartPos; i < match.EndPos; i++ {
+			runes[i] = replacement
+		}
+	}
+
+	return string(runes)
 }
 
 // ReplaceWithAsterisk 使用 * 号替换敏感词
@@ -65,13 +81,44 @@ func (f *filter) ReplaceWithStrategy(text string, strategy func(word core.Sensit
 	return f.replaceWords(text, matches, strategy)
 }
 
-// ReplaceWithStrategyIn 使用自定义替换策略替换指定分类的敏感词
+// ReplaceWithStrategyIn 使用自定义策略替换指定分类的敏感词
 func (f *filter) ReplaceWithStrategyIn(text string, strategy func(word core.SensitiveWord) string, categories ...category.Category) string {
-	if text == "" || strategy == nil || len(categories) == 0 {
+	if text == "" || len(categories) == 0 || strategy == nil {
 		return text
 	}
+
+	// 获取所有匹配的敏感词
 	matches := f.detector.MatchAllIn(text, categories...)
-	return f.replaceWords(text, matches, strategy)
+	if len(matches) == 0 {
+		return text
+	}
+
+	// 按照位置排序，从后向前替换
+	sort.Slice(matches, func(i, j int) bool {
+		return matches[i].StartPos > matches[j].StartPos
+	})
+
+	// 转换为rune数组以便处理中文
+	result := []rune(text)
+	for _, match := range matches {
+		// 获取替换文本
+		replacement := []rune(strategy(match))
+		// 计算需要替换的长度
+		replaceLen := match.EndPos - match.StartPos
+		if len(replacement) != replaceLen {
+			// 如果替换文本长度不同，需要调整结果数组
+			newResult := make([]rune, len(result)+(len(replacement)-replaceLen))
+			copy(newResult, result[:match.StartPos])
+			copy(newResult[match.StartPos:], replacement)
+			copy(newResult[match.StartPos+len(replacement):], result[match.EndPos:])
+			result = newResult
+		} else {
+			// 长度相同，直接替换
+			copy(result[match.StartPos:], replacement)
+		}
+	}
+
+	return string(result)
 }
 
 // replaceWords 替换文本中的敏感词

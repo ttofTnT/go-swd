@@ -166,6 +166,11 @@ func (l *Loader) addWordInternal(word string, cat category.Category) error {
 		return fmt.Errorf("word cannot be empty")
 	}
 
+	// 验证分类的有效性
+	if !cat.IsValid() {
+		return fmt.Errorf("invalid category: %v", cat)
+	}
+
 	// 如果词已存在且有效分类，且当前要设置的是 None 分类，则保留原有分类
 	if val, exists := l.words.Load(word); exists {
 		if existingCat, ok := val.(category.Category); ok && existingCat != category.None && cat == category.None {

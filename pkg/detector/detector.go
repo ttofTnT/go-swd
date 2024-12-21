@@ -100,10 +100,17 @@ func (d *detector) DetectIn(text string, categories ...category.Category) bool {
 
 	// 使用读锁进行检测
 	d.mu.RLock()
-	match := d.algo.Match(processedText)
+	matches := d.algo.MatchAll(processedText)
 	d.mu.RUnlock()
 
-	return match != nil && categoryMap[match.Category]
+	// 检查是否有任何匹配的分类
+	for _, match := range matches {
+		if categoryMap[match.Category] {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Match 返回文本中找到的第一个敏感词
@@ -123,7 +130,7 @@ func (d *detector) Match(text string) *core.SensitiveWord {
 	return match
 }
 
-// MatchIn 返回文本中指定分类的第一个敏感词
+// MatchIn 返回文本中找到的第一个指定分类的敏感词
 func (d *detector) MatchIn(text string, categories ...category.Category) *core.SensitiveWord {
 	if text == "" || len(categories) == 0 {
 		return nil
@@ -132,7 +139,7 @@ func (d *detector) MatchIn(text string, categories ...category.Category) *core.S
 	// 预处理文本
 	processedText := d.preprocess.Process(text)
 
-	// 创建分类映射
+	// 创建分类映射用于快速查找
 	categoryMap := make(map[category.Category]bool)
 	for _, cat := range categories {
 		categoryMap[cat] = true
@@ -140,11 +147,15 @@ func (d *detector) MatchIn(text string, categories ...category.Category) *core.S
 
 	// 使用读锁进行检测
 	d.mu.RLock()
-	match := d.algo.Match(processedText)
+	matches := d.algo.MatchAll(processedText)
 	d.mu.RUnlock()
 
-	if match != nil && categoryMap[match.Category] {
-		return match
+	// 返回第一个匹配的分类
+	for _, match := range matches {
+		if categoryMap[match.Category] {
+			result := match
+			return &result
+		}
 	}
 
 	return nil
@@ -167,7 +178,7 @@ func (d *detector) MatchAll(text string) []core.SensitiveWord {
 	return matches
 }
 
-// MatchAllIn 返回文本中指定分类的所有敏感词
+// MatchAllIn 返回文本中找到的所有指定分类的敏感词
 func (d *detector) MatchAllIn(text string, categories ...category.Category) []core.SensitiveWord {
 	if text == "" || len(categories) == 0 {
 		return nil
@@ -176,7 +187,7 @@ func (d *detector) MatchAllIn(text string, categories ...category.Category) []co
 	// 预处理文本
 	processedText := d.preprocess.Process(text)
 
-	// 创建分类映射
+	// 创建分类映射用于快速查找
 	categoryMap := make(map[category.Category]bool)
 	for _, cat := range categories {
 		categoryMap[cat] = true
@@ -184,16 +195,16 @@ func (d *detector) MatchAllIn(text string, categories ...category.Category) []co
 
 	// 使用读锁进行检测
 	d.mu.RLock()
-	matches := d.algo.MatchAll(processedText)
+	allMatches := d.algo.MatchAll(processedText)
 	d.mu.RUnlock()
 
-	// 按分类过滤匹配项
-	var filteredMatches []core.SensitiveWord
-	for _, match := range matches {
+	// 过滤出指定分类的敏感词
+	var matches []core.SensitiveWord
+	for _, match := range allMatches {
 		if categoryMap[match.Category] {
-			filteredMatches = append(filteredMatches, match)
+			matches = append(matches, match)
 		}
 	}
 
-	return filteredMatches
+	return matches
 }

@@ -1,7 +1,7 @@
 package category
 
 // Category 敏感词分类
-type Category uint32
+type Category int
 
 const (
 	// None 未分类
@@ -16,7 +16,7 @@ const (
 	Gambling
 	// Drugs 毒品
 	Drugs
-	// Profanity 谩骂
+	// Profanity 脏话
 	Profanity
 	// Discrimination 歧视
 	Discrimination
@@ -26,32 +26,75 @@ const (
 	Custom
 )
 
-// CategoryNames 分类名称映射
-var CategoryNames = map[Category]string{
-	None:           "未分类",
-	Pornography:    "涉黄",
-	Political:      "涉政",
-	Violence:       "暴力",
-	Gambling:       "赌博",
-	Drugs:          "毒品",
-	Profanity:      "谩骂",
-	Discrimination: "歧视",
-	Scam:           "诈骗",
-	Custom:         "自定义",
-}
-
-// String 获取分类名称
+// String 返回分类的字符串表示
 func (c Category) String() string {
-	if name, ok := CategoryNames[c]; ok {
-		return name
+	switch c {
+	case None:
+		return "未分类"
+	case Pornography:
+		return "涉黄"
+	case Political:
+		return "涉政"
+	case Violence:
+		return "暴力"
+	case Gambling:
+		return "赌博"
+	case Drugs:
+		return "毒品"
+	case Profanity:
+		return "脏话"
+	case Discrimination:
+		return "歧视"
+	case Scam:
+		return "诈骗"
+	case Custom:
+		return "自定义"
+	default:
+		return "未知分类"
 	}
-	return "未知分类"
 }
 
-// Contains 判断是否包含指定分类
+// Contains 检查当前分类是否包含指定分类
 func (c Category) Contains(other Category) bool {
+	if c == All {
+		return true
+	}
 	return c&other != 0
 }
 
 // All 所有预定义分类
-var All = Political | Pornography | Gambling | Violence | Discrimination | Drugs | Scam
+var All = Pornography | Political | Violence | Gambling | Drugs | Profanity | Discrimination | Scam | Custom
+
+// IsValid 检查分类是否有效
+func (c Category) IsValid() bool {
+	// None 分类是有效的
+	if c == None {
+		return true
+	}
+
+	// 检查是否是预定义的分类
+	validCategories := []Category{
+		Pornography,
+		Political,
+		Violence,
+		Gambling,
+		Drugs,
+		Profanity,
+		Discrimination,
+		Scam,
+		Custom,
+	}
+
+	for _, validCat := range validCategories {
+		if c == validCat {
+			return true
+		}
+	}
+
+	// 检查是否是组合分类
+	if (c & All) == c {
+		return true
+	}
+
+	return false
+}

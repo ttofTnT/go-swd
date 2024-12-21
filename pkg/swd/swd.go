@@ -98,8 +98,11 @@ func (swd *SWD) DetectIn(text string, categories ...category.Category) bool {
 	return swd.detector.DetectIn(text, categories...)
 }
 
-// Match 返回文本中第一个敏感词
+// Match 返回文本中找到的第一个敏感词
 func (swd *SWD) Match(text string) *core.SensitiveWord {
+	if text == "" {
+		return nil
+	}
 	return swd.detector.Match(text)
 }
 
