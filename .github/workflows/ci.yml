@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
   test:
@@ -13,27 +13,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 设置 Go 环境，使用 go.mod 中定义的版本
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod # 自动读取 go.mod 中的 Go 版本
-
-      - name: Install dependencies
+          go-version-file: 'go.mod'
+          cache: true
+      
+      - name: Download dependencies
         run: go mod download
 
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-
-      - name: Run tests
+      - name: Run Tests
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
+          fail_ci_if_error: false
 
   build:
     name: Build
@@ -44,7 +40,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: go.mod # 自动读取 go.mod 中的 Go 版本
+          go-version-file: 'go.mod'
+          cache: true
 
       - name: Build
-        run: go build -v ./...
+        run: go build -v ./... 

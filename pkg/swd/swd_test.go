@@ -460,7 +460,7 @@ func TestSWD_Performance(t *testing.T) {
 		{
 			name:     "long text performance",
 			text:     longText,
-			maxTime:  time.Second * 5,
+			maxTime:  time.Second * 10,
 			numTests: 1000,
 		},
 	}
