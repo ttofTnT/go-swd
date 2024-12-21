@@ -92,12 +92,6 @@ func (d *detector) DetectIn(text string, categories ...category.Category) bool {
 	// 预处理文本
 	processedText := d.preprocess.Process(text)
 
-	// 创建分类映射用于快速查找
-	categoryMap := make(map[category.Category]bool)
-	for _, cat := range categories {
-		categoryMap[cat] = true
-	}
-
 	// 使用读锁进行检测
 	d.mu.RLock()
 	matches := d.algo.MatchAll(processedText)
@@ -105,8 +99,10 @@ func (d *detector) DetectIn(text string, categories ...category.Category) bool {
 
 	// 检查是否有任何匹配的分类
 	for _, match := range matches {
-		if categoryMap[match.Category] {
-			return true
+		for _, cat := range categories {
+			if cat.Contains(match.Category) {
+				return true
+			}
 		}
 	}
 
@@ -139,12 +135,6 @@ func (d *detector) MatchIn(text string, categories ...category.Category) *core.S
 	// 预处理文本
 	processedText := d.preprocess.Process(text)
 
-	// 创建分类映射用于快速查找
-	categoryMap := make(map[category.Category]bool)
-	for _, cat := range categories {
-		categoryMap[cat] = true
-	}
-
 	// 使用读锁进行检测
 	d.mu.RLock()
 	matches := d.algo.MatchAll(processedText)
@@ -152,9 +142,11 @@ func (d *detector) MatchIn(text string, categories ...category.Category) *core.S
 
 	// 返回第一个匹配的分类
 	for _, match := range matches {
-		if categoryMap[match.Category] {
-			result := match
-			return &result
+		for _, cat := range categories {
+			if cat.Contains(match.Category) {
+				result := match
+				return &result
+			}
 		}
 	}
 
@@ -187,12 +179,6 @@ func (d *detector) MatchAllIn(text string, categories ...category.Category) []co
 	// 预处理文本
 	processedText := d.preprocess.Process(text)
 
-	// 创建分类映射用于快速查找
-	categoryMap := make(map[category.Category]bool)
-	for _, cat := range categories {
-		categoryMap[cat] = true
-	}
-
 	// 使用读锁进行检测
 	d.mu.RLock()
 	allMatches := d.algo.MatchAll(processedText)
@@ -201,8 +187,11 @@ func (d *detector) MatchAllIn(text string, categories ...category.Category) []co
 	// 过滤出指定分类的敏感词
 	var matches []core.SensitiveWord
 	for _, match := range allMatches {
-		if categoryMap[match.Category] {
-			matches = append(matches, match)
+		for _, cat := range categories {
+			if cat.Contains(match.Category) {
+				matches = append(matches, match)
+				break // 避免同一个敏感词被多个分类匹配而重复添加
+			}
 		}
 	}
 

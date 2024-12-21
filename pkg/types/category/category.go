@@ -56,9 +56,21 @@ func (c Category) String() string {
 
 // Contains 检查当前分类是否包含指定分类
 func (c Category) Contains(other Category) bool {
-	if c == All {
-		return true
+	// 处理None分类的特殊情况
+	if other == None {
+		return c == None
 	}
+
+	// 处理All分类的情况
+	if other == All {
+		return (c & All) == All
+	}
+
+	// 验证other分类的有效性
+	if !other.IsValid() {
+		return false
+	}
+
 	return c&other != 0
 }
 

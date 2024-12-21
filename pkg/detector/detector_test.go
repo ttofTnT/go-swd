@@ -115,6 +115,50 @@ func TestDetector_DetectIn(t *testing.T) {
 			},
 			expected: false,
 		},
+		{
+			name: "All分类-检测单个分类",
+			text: "这是一段包含色情的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: true,
+		},
+		{
+			name: "All分类-检测多个分类",
+			text: "这是一段包含色情和政府的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: true,
+		},
+		{
+			name: "All分类-检测不包含敏感词",
+			text: "这是一段正常的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: false,
+		},
+		{
+			name: "All分类-检测空文本",
+			text: "",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -226,11 +270,10 @@ func TestDetector_MatchIn(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "多分类匹配",
-			text: "这是一段包含色情和政府的文本",
+			name: "All分类-匹配单个分类",
+			text: "这是一段包含色情的文本",
 			categories: []category.Category{
-				category.Pornography,
-				category.Political,
+				category.All,
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -239,6 +282,31 @@ func TestDetector_MatchIn(t *testing.T) {
 				Word:     "色情",
 				Category: category.Pornography,
 			},
+		},
+		{
+			name: "All分类-匹配多个分类",
+			text: "这是一段包含色情和政府的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: &core.SensitiveWord{
+				Word:     "色情",
+				Category: category.Pornography,
+			},
+		},
+		{
+			name: "All分类-匹配不包含敏感词",
+			text: "这是一段正常的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: nil,
 		},
 	}
 
@@ -382,11 +450,30 @@ func TestDetector_MatchAllIn(t *testing.T) {
 			},
 		},
 		{
-			name: "多个分类多个敏感词匹配",
+			name: "All分类-匹配单个分类多个词",
+			text: "这是一段包含seqing和色情的文本",
+			categories: []category.Category{
+				category.All,
+			},
+			options: core.SWDOptions{
+				IgnoreCase: true,
+			},
+			expected: []core.SensitiveWord{
+				{
+					Word:     "seqing",
+					Category: category.Pornography,
+				},
+				{
+					Word:     "色情",
+					Category: category.Pornography,
+				},
+			},
+		},
+		{
+			name: "All分类-匹配多个分类",
 			text: "这是一段包含色情和政府的文本",
 			categories: []category.Category{
-				category.Pornography,
-				category.Political,
+				category.All,
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -403,10 +490,10 @@ func TestDetector_MatchAllIn(t *testing.T) {
 			},
 		},
 		{
-			name: "错误分类匹配",
-			text: "这是一段包含色情的文本",
+			name: "All分类-匹配不包含敏感词",
+			text: "这是一段正常的文本",
 			categories: []category.Category{
-				category.Political,
+				category.All,
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
