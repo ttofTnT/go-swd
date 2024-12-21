@@ -1,6 +1,6 @@
 module github.com/kirklin/go-swd
 
-go 1.23
+go 1.23.4
 
 require github.com/stretchr/testify v1.10.0
 
