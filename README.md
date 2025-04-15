@@ -36,7 +36,7 @@ V1.0 版本支持：
 ### 安装
 
 ```bash
-go get github.com/kirklin/go-swd
+go get github.com/ttofTnT/go-swd
 ```
 
 ### 基础使用
@@ -48,7 +48,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kirklin/go-swd"
+	"github.com/ttofTnT/go-swd"
 )
 
 func main() {
