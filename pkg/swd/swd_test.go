@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // TestNew 测试创建SWD实例
@@ -180,13 +180,13 @@ func TestSWD_DetectIn(t *testing.T) {
 
 	// 添加一些测试用的敏感词
 	testWords := map[string]category.Category{
-		"色情":  category.Pornography,
-		"赌博":  category.Gambling,
-		"毒品":  category.Drugs,
-		"傻逼":  category.Profanity,
+		"色情":   category.Pornography,
+		"赌博":   category.Gambling,
+		"毒品":   category.Drugs,
+		"傻逼":   category.Profanity,
 		"小日本": category.Discrimination,
-		"诈骗":  category.Scam,
-		"政府":  category.Political,
+		"诈骗":   category.Scam,
+		"政府":   category.Political,
 	}
 
 	for word, cat := range testWords {
@@ -312,7 +312,7 @@ func TestCategory_Contains(t *testing.T) {
 		},
 		{
 			name:     "all categories contains one",
-			category: category.All,
+			category: category.All(),
 			other:    category.Pornography,
 			want:     true,
 		},

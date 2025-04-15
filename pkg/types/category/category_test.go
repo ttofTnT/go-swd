@@ -50,44 +50,44 @@ func TestCategory_Contains(t *testing.T) {
 		// All分类测试
 		{
 			name:     "All-检测单个分类",
-			category: All,
+			category: All(),
 			other:    Pornography,
 			want:     true,
 		},
 		{
 			name:     "All-检测组合分类",
-			category: All,
+			category: All(),
 			other:    Pornography | Political,
 			want:     true,
 		},
 		{
 			name:     "All-检测All",
-			category: All,
-			other:    All,
+			category: All(),
+			other:    All(),
 			want:     true,
 		},
 		{
 			name:     "All-检测None",
-			category: All,
+			category: All(),
 			other:    None,
 			want:     false,
 		},
 		{
 			name:     "单个分类-检测All",
 			category: Pornography,
-			other:    All,
+			other:    All(),
 			want:     false,
 		},
 		{
 			name:     "组合分类-检测All(不完整)",
 			category: Pornography | Political | Violence,
-			other:    All,
+			other:    All(),
 			want:     false,
 		},
 		{
 			name:     "组合分类-检测All(完整)",
-			category: All,
-			other:    All,
+			category: All(),
+			other:    All(),
 			want:     true,
 		},
 
@@ -134,11 +134,11 @@ func TestCategory_Contains_Comprehensive(t *testing.T) {
 	for _, cat := range categories {
 		t.Run("Single_Category_"+cat.String(), func(t *testing.T) {
 			// 单个分类不应该包含All
-			if cat.Contains(All) {
+			if cat.Contains(All()) {
 				t.Errorf("Single category %v should not contain All", cat)
 			}
 			// All应该包含所有单个分类
-			if !All.Contains(cat) {
+			if !All().Contains(cat) {
 				t.Errorf("All should contain category %v", cat)
 			}
 		})
@@ -146,7 +146,7 @@ func TestCategory_Contains_Comprehensive(t *testing.T) {
 
 	// 测试All与自身的关系
 	t.Run("All_Contains_All", func(t *testing.T) {
-		if !All.Contains(All) {
+		if !All().Contains(All()) {
 			t.Error("All should contain itself")
 		}
 	})
@@ -155,7 +155,7 @@ func TestCategory_Contains_Comprehensive(t *testing.T) {
 	t.Run("Combined_Categories", func(t *testing.T) {
 		// 创建一个不完整的组合分类
 		partial := Pornography | Political | Violence
-		if partial.Contains(All) {
+		if partial.Contains(All()) {
 			t.Error("Partial combination should not contain All")
 		}
 
@@ -164,10 +164,10 @@ func TestCategory_Contains_Comprehensive(t *testing.T) {
 		for _, cat := range categories {
 			complete |= cat
 		}
-		if !complete.Contains(All) {
+		if !complete.Contains(All()) {
 			t.Error("Complete combination should contain All")
 		}
-		if complete != All {
+		if complete != All() {
 			t.Error("Complete combination should equal All")
 		}
 	})

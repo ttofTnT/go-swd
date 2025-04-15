@@ -119,7 +119,7 @@ func TestDetector_DetectIn(t *testing.T) {
 			name: "All分类-检测单个分类",
 			text: "这是一段包含色情的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -130,7 +130,7 @@ func TestDetector_DetectIn(t *testing.T) {
 			name: "All分类-检测多个分类",
 			text: "这是一段包含色情和政府的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -141,7 +141,7 @@ func TestDetector_DetectIn(t *testing.T) {
 			name: "All分类-检测不包含敏感词",
 			text: "这是一段正常的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -152,7 +152,7 @@ func TestDetector_DetectIn(t *testing.T) {
 			name: "All分类-检测空文本",
 			text: "",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -273,7 +273,7 @@ func TestDetector_MatchIn(t *testing.T) {
 			name: "All分类-匹配单个分类",
 			text: "这是一段包含色情的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -287,7 +287,7 @@ func TestDetector_MatchIn(t *testing.T) {
 			name: "All分类-匹配多个分类",
 			text: "这是一段包含色情和政府的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -301,7 +301,7 @@ func TestDetector_MatchIn(t *testing.T) {
 			name: "All分类-匹配不包含敏感词",
 			text: "这是一段正常的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -453,7 +453,7 @@ func TestDetector_MatchAllIn(t *testing.T) {
 			name: "All分类-匹配单个分类多个词",
 			text: "这是一段包含seqing和色情的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -473,7 +473,7 @@ func TestDetector_MatchAllIn(t *testing.T) {
 			name: "All分类-匹配多个分类",
 			text: "这是一段包含色情和政府的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,
@@ -493,7 +493,7 @@ func TestDetector_MatchAllIn(t *testing.T) {
 			name: "All分类-匹配不包含敏感词",
 			text: "这是一段正常的文本",
 			categories: []category.Category{
-				category.All,
+				category.All(),
 			},
 			options: core.SWDOptions{
 				IgnoreCase: true,

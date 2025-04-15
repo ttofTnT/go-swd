@@ -7,8 +7,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ttofTnT/go-swd/pkg/types/category"
 	"github.com/stretchr/testify/assert"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // TestNewLoader 测试创建新的加载器
