@@ -1,7 +1,7 @@
 package core
 
 import (
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // AlgorithmType 算法类型

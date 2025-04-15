@@ -2,9 +2,9 @@
 package swd
 
 import (
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/swd"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/swd"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // 导出核心类型

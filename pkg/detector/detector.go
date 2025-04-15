@@ -6,11 +6,11 @@ import (
 	"log"
 	"sync"
 
-	"github.com/kirklin/go-swd/pkg/algorithm"
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/detector/preprocessor"
-	"github.com/kirklin/go-swd/pkg/dictionary"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/algorithm"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/detector/preprocessor"
+	"github.com/ttofTnT/go-swd/pkg/dictionary"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // detector 实现敏感词检测器接口

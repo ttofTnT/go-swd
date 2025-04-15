@@ -3,8 +3,8 @@ package filter
 import (
 	"sort"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // filter 实现了敏感词过滤器接口

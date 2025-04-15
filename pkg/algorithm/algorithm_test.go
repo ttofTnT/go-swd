@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // algorithmTest 定义测试用例结构

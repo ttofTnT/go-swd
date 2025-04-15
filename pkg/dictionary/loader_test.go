@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -251,7 +251,7 @@ func TestAddWords(t *testing.T) {
 	// 测试添加空白词
 	invalidWords := map[string]category.Category{
 		"测试词4": category.Political,
-		"   ":  category.Political,
+		"   ":     category.Political,
 	}
 	err = loader.AddWords(invalidWords)
 	assert.Error(t, err)

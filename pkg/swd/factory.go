@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/detector"
-	"github.com/kirklin/go-swd/pkg/dictionary"
-	"github.com/kirklin/go-swd/pkg/filter"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/detector"
+	"github.com/ttofTnT/go-swd/pkg/dictionary"
+	"github.com/ttofTnT/go-swd/pkg/filter"
 )
 
 // DefaultFactory 默认组件工厂实现

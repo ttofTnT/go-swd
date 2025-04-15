@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/kirklin/go-swd"
+	"github.com/ttofTnT/go-swd"
 )
 
 func main() {
@@ -17,16 +17,16 @@ func main() {
 	Military := swd.RegisterCategory("军事")
 	// 2. 添加自定义敏感词（可选）
 	customWords := map[string]swd.Category{
-		"涉黄":       swd.Pornography,
-		"涉政":       swd.Political,
-		"赌博词汇":   swd.Gambling,
-		"毒品词汇":   swd.Drugs,
-		"脏话词汇":   swd.Profanity,
-		"歧视词汇":   swd.Discrimination,
-		"诈骗词汇":   swd.Scam,
+		"涉黄":    swd.Pornography,
+		"涉政":    swd.Political,
+		"赌博词汇":  swd.Gambling,
+		"毒品词汇":  swd.Drugs,
+		"脏话词汇":  swd.Profanity,
+		"歧视词汇":  swd.Discrimination,
+		"诈骗词汇":  swd.Scam,
 		"自定义词汇": swd.Custom,
-		"人工智能":   AI,
-		"军用术语":   Military,
+		"人工智能":  AI,
+		"军用术语":  Military,
 	}
 	if err := detector.AddWords(customWords); err != nil {
 		log.Fatal(err)

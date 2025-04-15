@@ -3,7 +3,7 @@ package preprocessor
 import (
 	"unicode"
 
-	"github.com/kirklin/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/core"
 )
 
 // Preprocessor 文本预处理器

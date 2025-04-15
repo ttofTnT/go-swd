@@ -3,7 +3,7 @@ package preprocessor
 import (
 	"testing"
 
-	"github.com/kirklin/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/core"
 )
 
 func TestPreprocessor_Process(t *testing.T) {

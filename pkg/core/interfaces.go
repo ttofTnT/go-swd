@@ -3,7 +3,7 @@ package core
 import (
 	"context"
 
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // SensitiveWord 敏感词匹配结果

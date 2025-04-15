@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 // mockDetector 是一个用于测试的mock检测器

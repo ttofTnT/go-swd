@@ -3,8 +3,8 @@ package detector
 import (
 	"testing"
 
-	"github.com/kirklin/go-swd/pkg/core"
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 )
 
 func TestDetector_Detect(t *testing.T) {

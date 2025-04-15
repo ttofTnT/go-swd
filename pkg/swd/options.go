@@ -1,6 +1,6 @@
 package swd
 
-import "github.com/kirklin/go-swd/pkg/core"
+import "github.com/ttofTnT/go-swd/pkg/core"
 
 // WithOptions 设置所有配置选项
 func (swd *SWD) WithOptions(options core.SWDOptions) *SWD {

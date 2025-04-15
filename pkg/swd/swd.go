@@ -3,9 +3,9 @@ package swd
 import (
 	"context"
 
-	"github.com/kirklin/go-swd/pkg/types/category"
+	"github.com/ttofTnT/go-swd/pkg/types/category"
 
-	"github.com/kirklin/go-swd/pkg/core"
+	"github.com/ttofTnT/go-swd/pkg/core"
 )
 
 // ComponentFactory 定义了创建各种组件的工厂接口
