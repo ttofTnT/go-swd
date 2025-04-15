@@ -1,4 +1,4 @@
-module github.com/kirklin/go-swd
+module github.com/ttofTnT/go-swd
 
 go 1.23.4
 
