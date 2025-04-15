@@ -17,7 +17,7 @@ type (
 	SWD = swd.SWD
 )
 
-// 导出分类常量
+// 导出静态分类常量
 const (
 	None           = category.None           // 未分类
 	Pornography    = category.Pornography    // 涉黄
@@ -31,8 +31,19 @@ const (
 	Custom         = category.Custom         // 自定义
 )
 
-// All 所有预定义分类的组合
-var All = category.All
+func AllCategories() category.Category {
+	return category.All()
+}
+
+// RegisterCategory 用于注册动态分类
+func RegisterCategory(name string) category.Category {
+	return category.RegisterCategory(name)
+}
+
+// ParseCategory 用于解析分类名称
+func ParseCategory(name string) (category.Category, bool) {
+	return category.ParseCategory(name)
+}
 
 // New 创建一个新的敏感词检测引擎
 func New() (*SWD, error) {

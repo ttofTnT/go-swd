@@ -13,24 +13,28 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	AI := swd.RegisterCategory("AI相关")
+	Military := swd.RegisterCategory("军事")
 	// 2. 添加自定义敏感词（可选）
 	customWords := map[string]swd.Category{
-		"涉黄":    swd.Pornography,    // 涉黄分类
-		"涉政":    swd.Political,      // 涉政分类
-		"赌博词汇":  swd.Gambling,       // 赌博分类
-		"毒品词汇":  swd.Drugs,          // 毒品分类
-		"脏话词汇":  swd.Profanity,      // 脏话分类
-		"歧视词汇":  swd.Discrimination, // 歧视分类
-		"诈骗词汇":  swd.Scam,           // 诈骗分类
-		"自定义词汇": swd.Custom,         // 自定义分类
+		"涉黄":       swd.Pornography,
+		"涉政":       swd.Political,
+		"赌博词汇":   swd.Gambling,
+		"毒品词汇":   swd.Drugs,
+		"脏话词汇":   swd.Profanity,
+		"歧视词汇":   swd.Discrimination,
+		"诈骗词汇":   swd.Scam,
+		"自定义词汇": swd.Custom,
+		"人工智能":   AI,
+		"军用术语":   Military,
 	}
 	if err := detector.AddWords(customWords); err != nil {
 		log.Fatal(err)
 	}
 
 	// 3. 基本检测
-	text := "这是一段包含敏感词涉黄和涉政的文本"
+	text := "这是一段包含敏感词人工智能和涉黄的文本"
+
 	fmt.Println("是否包含敏感词:", detector.Detect(text))
 
 	// 4. 检测指定分类
@@ -41,7 +45,7 @@ func main() {
 
 	// 5. 检测多个分类
 	fmt.Println("是否包含涉黄或涉政内容:", detector.DetectIn(text, swd.Pornography, swd.Political))
-	fmt.Println("是否包含任意预定义分类:", detector.DetectIn(text, swd.All))
+	fmt.Println("是否包含任意预定义分类:", detector.DetectIn(text, swd.AllCategories()))
 
 	// 6. 获取匹配结果
 	if word := detector.Match(text); word != nil {

@@ -1,108 +1,122 @@
 package category
 
+import (
+	"fmt"
+	"sync"
+)
+
 // Category 敏感词分类
 type Category int
 
-const (
-	// None 未分类
-	None Category = 0
-	// Pornography 涉黄
-	Pornography Category = 1 << iota
-	// Political 涉政
-	Political
-	// Violence 暴力
-	Violence
-	// Gambling 赌博
-	Gambling
-	// Drugs 毒品
-	Drugs
-	// Profanity 脏话
-	Profanity
-	// Discrimination 歧视
-	Discrimination
-	// Scam 诈骗
-	Scam
-	// Custom 自定义
-	Custom
+var (
+	mu              sync.RWMutex
+	categoryMap     = make(map[string]Category) // name => Category
+	categoryString  = make(map[Category]string) // Category => name
+	nextDynamicVal  Category                    // 动态分类起始值
+	predefinedFlags Category                    // 所有静态分类合集
 )
 
-// String 返回分类的字符串表示
-func (c Category) String() string {
-	switch c {
-	case None:
-		return "未分类"
-	case Pornography:
-		return "涉黄"
-	case Political:
-		return "涉政"
-	case Violence:
-		return "暴力"
-	case Gambling:
-		return "赌博"
-	case Drugs:
-		return "毒品"
-	case Profanity:
-		return "脏话"
-	case Discrimination:
-		return "歧视"
-	case Scam:
-		return "诈骗"
-	case Custom:
-		return "自定义"
-	default:
-		return "未知分类"
-	}
+// 静态分类常量
+const (
+	None           Category = 0
+	Pornography    Category = 1 << iota // 涉黄
+	Political                           // 涉政
+	Violence                            // 暴力
+	Gambling                            // 赌博
+	Drugs                               // 毒品
+	Profanity                           // 脏话
+	Discrimination                      // 歧视
+	Scam                                // 诈骗
+	Custom                              // 自定义
+)
+
+func init() {
+	// 注册静态分类
+	registerStatic("未分类", None)
+	registerStatic("涉黄", Pornography)
+	registerStatic("涉政", Political)
+	registerStatic("暴力", Violence)
+	registerStatic("赌博", Gambling)
+	registerStatic("毒品", Drugs)
+	registerStatic("脏话", Profanity)
+	registerStatic("歧视", Discrimination)
+	registerStatic("诈骗", Scam)
+	registerStatic("自定义", Custom)
+
+	// 动态分类起始值 = 静态最大值 << 1
+	nextDynamicVal = Custom << 1
 }
 
-// Contains 检查当前分类是否包含指定分类
+// 注册静态分类
+func registerStatic(name string, val Category) {
+	categoryMap[name] = val
+	categoryString[val] = name
+	predefinedFlags |= val
+}
+
+// RegisterCategory 注册一个新分类（如果已存在则返回旧值）
+func RegisterCategory(name string) Category {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if val, ok := categoryMap[name]; ok {
+		return val
+	}
+
+	val := nextDynamicVal
+	nextDynamicVal <<= 1
+	categoryMap[name] = val
+	categoryString[val] = name
+	return val
+}
+
+// ParseCategory 获取分类值（从名称）
+func ParseCategory(name string) (Category, bool) {
+	mu.RLock()
+	defer mu.RUnlock()
+	val, ok := categoryMap[name]
+	return val, ok
+}
+
+// String 返回分类名称
+func (c Category) String() string {
+	mu.RLock()
+	defer mu.RUnlock()
+	if name, ok := categoryString[c]; ok {
+		return name
+	}
+	return fmt.Sprintf("未知分类(%d)", c)
+}
+
+// Contains 判断是否包含某分类（支持组合）
 func (c Category) Contains(other Category) bool {
-	// 处理None分类的特殊情况
 	if other == None {
 		return c == None
 	}
-
-	// 处理All分类的情况
-	if other == All {
-		return (c & All) == All
-	}
-
-	// 验证other分类的有效性
 	if !other.IsValid() {
 		return false
 	}
-
 	return c&other != 0
 }
 
-// All 所有预定义分类
-var All = Pornography | Political | Violence | Gambling | Drugs | Profanity | Discrimination | Scam | Custom
-
-// IsValid 检查分类是否有效
+// IsValid 判断是否合法（静态或动态）
 func (c Category) IsValid() bool {
-	// None 分类是有效的
-	if c == None {
-		return true
-	}
+	mu.RLock()
+	defer mu.RUnlock()
+	_, ok := categoryString[c]
+	return ok
+}
 
-	// 检查是否是预定义的分类
-	validCategories := []Category{
-		Pornography,
-		Political,
-		Violence,
-		Gambling,
-		Drugs,
-		Profanity,
-		Discrimination,
-		Scam,
-		Custom,
-	}
+// All 返回当前所有已注册的分类（含静态和动态）
+func All() Category {
+	mu.RLock()
+	defer mu.RUnlock()
 
-	for _, validCat := range validCategories {
-		if c == validCat {
-			return true
+	var all Category
+	for cat := range categoryString {
+		if cat != None {
+			all |= cat
 		}
 	}
-
-	// 检查是否是组合分类
-	return (c & All) == c
+	return all
 }
